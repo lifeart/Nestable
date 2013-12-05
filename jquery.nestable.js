@@ -41,7 +41,7 @@
             handleClass     : 'dd-handle',
             collapsedClass  : 'dd-collapsed',
             placeClass      : 'dd-placeholder',
-            noPlaceClass    : 'dd-noplace',
+            noPlaceClass      : 'dd-noplace',
             noDragClass     : 'dd-nodrag',
             emptyClass      : 'dd-empty',
             expandBtnHTML   : '<button data-action="expand" type="button">Expand</button>',
@@ -142,10 +142,8 @@
                 list  = this;
                 step  = function(level, depth)
                 {
-					// console.log(level);
                     var array = [ ],
-                    items = level.children(list.options.listNodeName);
-					console.log(items);
+                    items = level.children(list.options.itemNodeName);
                     items.each(function()
                     {
                         var li   = $(this),
@@ -158,14 +156,7 @@
                     });
                     return array;
                 };
-				// var data = list.el.children(list.options.itemNodeName);
-				// var array2 = [ ];
-				// data.each(function() {
-					// array2.push(step($(this), depth));
-				// });
-				console.log(list.el.children('.'+list.options.rootClass));
-            data =  step(list.el.children('.'+list.options.rootClass),depth);
-            return data;
+            return step(list.el,depth);
         },
 
         serialise: function()
@@ -321,7 +312,6 @@
             });
 			
 			// if (this.placeEl.closest(opt.listNodeName).parent('.'+opt.itemClass).hasClass(opt.noPlaceClass)) return;
-			// console.log(this.placeEl.closest(opt.listNodeName));
 
             // mouse position last events
             mouse.lastX = mouse.nowX;

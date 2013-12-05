@@ -28,7 +28,7 @@
 
     var eStart  = hasTouch ? 'touchstart'  : 'mousedown',
         eMove   = hasTouch ? 'touchmove'   : 'mousemove',
-        eEnd    = hasTouch ? 'touchend'    : 'mouseup';
+        eEnd     = hasTouch ? 'touchend'    : 'mouseup';
         eCancel = hasTouch ? 'touchcancel' : 'mouseup';
 
     var defaults = {
@@ -41,12 +41,13 @@
             handleClass     : 'dd-handle',
             collapsedClass  : 'dd-collapsed',
             placeClass      : 'dd-placeholder',
+            noPlaceClass    : 'dd-noplace',
             noDragClass     : 'dd-nodrag',
             emptyClass      : 'dd-empty',
             expandBtnHTML   : '<button data-action="expand" type="button">Expand</button>',
             collapseBtnHTML : '<button data-action="collapse" type="button">Collapse</button>',
             group           : 0,
-            maxDepth        : 5,
+            maxDepth        : 10,
             threshold       : 20
         };
 
@@ -141,8 +142,10 @@
                 list  = this;
                 step  = function(level, depth)
                 {
+					// console.log(level);
                     var array = [ ],
-                        items = level.children(list.options.itemNodeName);
+                    items = level.children(list.options.listNodeName);
+					console.log(items);
                     items.each(function()
                     {
                         var li   = $(this),
@@ -155,7 +158,13 @@
                     });
                     return array;
                 };
-            data = step(list.el.find(list.options.listNodeName).first(), depth);
+				// var data = list.el.children(list.options.itemNodeName);
+				// var array2 = [ ];
+				// data.each(function() {
+					// array2.push(step($(this), depth));
+				// });
+				console.log(list.el.children('.'+list.options.rootClass));
+            data =  step(list.el.children('.'+list.options.rootClass),depth);
             return data;
         },
 
@@ -250,6 +259,8 @@
                 target   = $(e.target),
                 dragItem = target.closest(this.options.itemNodeName);
 
+			this.lastTaken = dragItem;
+			
             this.placeEl.css('height', dragItem.height());
 
             mouse.offsetX = e.offsetX !== undefined ? e.offsetX : e.pageX - target.offset().left;
@@ -258,9 +269,8 @@
             mouse.startY = mouse.lastY = e.pageY;
 
             this.dragRootEl = this.el;
-
             this.dragEl = $(document.createElement(this.options.listNodeName)).addClass(this.options.listClass + ' ' + this.options.dragClass);
-            this.dragEl.css('width', dragItem.width());
+			this.dragEl.css('width', dragItem.width());
 
             // fix for zepto.js
             //dragItem.after(this.placeEl).detach().appendTo(this.dragEl);
@@ -286,16 +296,16 @@
 
         dragStop: function(e)
         {
+			// console.log(e);
             // fix for zepto.js
             //this.placeEl.replaceWith(this.dragEl.children(this.options.itemNodeName + ':first').detach());
             var el = this.dragEl.children(this.options.itemNodeName).first();
             el[0].parentNode.removeChild(el[0]);
             this.placeEl.replaceWith(el);
-
             this.dragEl.remove();
-            this.el.trigger('change');
+            this.el.trigger('change',this.lastTaken);
             if (this.hasNewRoot) {
-                this.dragRootEl.trigger('change');
+                this.dragRootEl.trigger('change',this.lastTaken);
             }
             this.reset();
         },
@@ -305,11 +315,13 @@
             var list, parent, prev, next, depth,
                 opt   = this.options,
                 mouse = this.mouse;
-
             this.dragEl.css({
                 'left' : e.pageX - mouse.offsetX,
                 'top'  : e.pageY - mouse.offsetY
             });
+			
+			// if (this.placeEl.closest(opt.listNodeName).parent('.'+opt.itemClass).hasClass(opt.noPlaceClass)) return;
+			// console.log(this.placeEl.closest(opt.listNodeName));
 
             // mouse position last events
             mouse.lastX = mouse.nowX;
@@ -360,7 +372,7 @@
                 mouse.distAxX = 0;
                 prev = this.placeEl.prev(opt.itemNodeName);
                 // increase horizontal level if previous sibling exists and is not collapsed
-                if (mouse.distX > 0 && prev.length && !prev.hasClass(opt.collapsedClass)) {
+                if (mouse.distX > 0 && prev.length && !prev.hasClass(opt.collapsedClass) && !prev.hasClass(opt.noPlaceClass)) {
                     // cannot increase level when item above is collapsed
                     list = prev.find(opt.listNodeName).last();
                     // check if depth limit has reached
@@ -400,6 +412,9 @@
                 this.dragEl[0].style.visibility = 'hidden';
             }
             this.pointEl = $(document.elementFromPoint(e.pageX - document.body.scrollLeft, e.pageY - (window.pageYOffset || document.documentElement.scrollTop)));
+			// if (this.pointEl.closest(opt.itemNodeName).hasClass(opt.noPlaceClass)) {
+				// return;
+			// }
             if (!hasPointerEvents) {
                 this.dragEl[0].style.visibility = 'visible';
             }
@@ -416,7 +431,6 @@
             // find parent list of item under cursor
             var pointElRoot = this.pointEl.closest('.' + opt.rootClass),
                 isNewRoot   = this.dragRootEl.data('nestable-id') !== pointElRoot.data('nestable-id');
-
             /**
              * move vertical
              */
